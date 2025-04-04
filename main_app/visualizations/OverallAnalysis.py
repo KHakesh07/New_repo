@@ -123,7 +123,7 @@ def display_emissions_summary(df):
     col1, col2, col3 = st.columns(3)
     with col3:
         global event_name
-        if st.button("🔄 Refresh Data"):
+        if st.button("🔄 Refresh Data", key="GO!"):
             event_name = get_latest_event()
             st.rerun()
     with col1:
