@@ -28,9 +28,8 @@ def fetch_latest_event():
     return event[0] if event else "No events found"
 
 
-# --- Google Maps API Key ---
-GOOGLE_MAPS_API_KEY = "AIzaSyAr3YAZlR8CNcjPoRA4hV_ePS93bCF39EQ"
-
+# --- Google Maps API Key ---GOOGLE_MAPS_API_KEY = st.secrets["google"]["maps_api_key"]
+gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
 st_autorefresh(interval=1000, key="latest_event_refresh")
 Event = fetch_latest_event()
 
