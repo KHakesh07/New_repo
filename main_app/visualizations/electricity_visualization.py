@@ -88,7 +88,7 @@ def plot_graphs(df, event_name, category, value_col):
 def electricity_visual():
     """Display electricity and HVAC emissions visualizations."""
     global event_name
-    if st.button("Refresh"):
+    if st.button("Refresh", key="KO!"):
         event_name = get_latest_event()
         st.rerun()
     tab1, tab2 = st.tabs(["⚡ Electricity Emissions", "❄️ HVAC Emissions"])
