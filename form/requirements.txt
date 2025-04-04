@@ -2,6 +2,7 @@ streamlit==1.37.0
 pillow==10.4.0
 qrcode[pil]==7.3.1
 request
+rich<14
 geopy
 pandas
 googlemaps
