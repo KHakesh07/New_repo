@@ -147,7 +147,7 @@ base1_dir = os.path.dirname(os.path.abspath(__file__))  # Get the current script
 file_path1 = os.path.join(base1_dir, "routes.csv")
 
 base2_dir = os.path.dirname(os.path.abspath(__file__))  # Get the current script directory
-file_path2 = os.path.join(base2_dir, "routes.csv")
+file_path2 = os.path.join(base2_dir, "airports.csv")
 
 # Load CSV Data
 routes_df = pd.read_csv(file_path1, names=routes_cols, usecols=["Source_Airport", "Destination_Airport"])
