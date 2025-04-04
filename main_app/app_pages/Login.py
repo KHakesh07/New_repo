@@ -73,7 +73,7 @@ def check_rate_limit(username):
         attempts = [t for t in login_attempts[username] if current_time - t < 300]  # 5 min window
         login_attempts[username] = attempts
         
-        if len(attempts) >= 5:
+        if len(attempts) >= 10:
             return False  # Rate limited
     else:
         login_attempts[username] = []
