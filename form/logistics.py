@@ -143,9 +143,15 @@ airports_cols = ["Airport_ID", "Name", "City", "Country", "IATA", "ICAO",
                  "Latitude", "Longitude", "Altitude", "Timezone", "DST", 
                  "Tz_database", "Type", "Source"]
 
+base1_dir = os.path.dirname(os.path.abspath(__file__))  # Get the current script directory
+file_path1 = os.path.join(base1_dir, "routes.csv")
+
+base2_dir = os.path.dirname(os.path.abspath(__file__))  # Get the current script directory
+file_path2 = os.path.join(base2_dir, "routes.csv")
+
 # Load CSV Data
-routes_df = pd.read_csv("routes.csv", names=routes_cols, usecols=["Source_Airport", "Destination_Airport"])
-airports_df = pd.read_csv('airports.csv', names=airports_cols, usecols=["Name","City", "IATA", "Latitude", "Longitude"])
+routes_df = pd.read_csv(file_path1, names=routes_cols, usecols=["Source_Airport", "Destination_Airport"])
+airports_df = pd.read_csv(file_path2, names=airports_cols, usecols=["Name","City", "IATA", "Latitude", "Longitude"])
 
 # --- Match Airport Name to City in airports_df ---
 def match_airport_to_city(airport_name, lat, lon):
