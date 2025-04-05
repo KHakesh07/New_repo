@@ -9,7 +9,7 @@ import requests
 import streamlit.components.v1 as components
 from datetime import datetime
 import time
-
+st.set_page_config(layout="wide")
 # Try to import optional components with fallbacks
 try:
     from streamlit_lottie import st_lottie
