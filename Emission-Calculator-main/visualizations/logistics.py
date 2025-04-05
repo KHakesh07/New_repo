@@ -5,6 +5,7 @@ import pandas as pd
 import plotly.express as px
 import os
 from streamlit_extras.dataframe_explorer import dataframe_explorer
+from streamlit_autorefresh import st_autorefresh
 
 # Database setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
