@@ -33,20 +33,12 @@ def logist_vis():
         return
 
     # Filter Section
-    with st.sidebar:
-        st.header("🔍 Filter Options")
-        selected_event = st.selectbox("Select Event", options=["All"] + sorted(df["Event"].unique().tolist()))
-        selected_transport = st.multiselect("Transport Modes", options=df["transport_mode"].unique(), default=list(df["transport_mode"].unique()))
 
     # Apply Filters
     if selected_event != "All":
         df = df[df["Event"] == selected_event]
     if selected_transport:
         df = df[df["transport_mode"].isin(selected_transport)]
-
-    # Show raw data table
-    st.subheader("📋 Raw Emissions Data")
-    st.dataframe(dataframe_explorer(df), use_container_width=True)
 
     # Metrics
     st.subheader("📊 Summary Statistics")
