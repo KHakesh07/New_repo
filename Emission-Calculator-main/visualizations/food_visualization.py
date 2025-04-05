@@ -40,9 +40,10 @@ latest_event = fetch_event_data()
 
 
 def food_visual():
-    data, latest_event = fetch_food_data(latest_event)
+    data = fetch_food_data(latest_event)
 
     st.subheader("🍎 Food Emission Data")
+    st.write("Event: ", latest_event)
 
     if data:
         df = pd.DataFrame(data, columns=["Diet", "FoodItem", "Emission (kg CO₂)"])
