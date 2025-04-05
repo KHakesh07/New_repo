@@ -18,12 +18,10 @@ def fetch_food_data(latest_event):
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        c = conn.cursor()
         cursor.execute(f"SELECT dietary_pattern, food_item, emission FROM food_choices WHERE event = ?", (latest_event,))
         data = cursor.fetchall()
-        event = c.fetchone()
         conn.close()
-        return data, event 
+        return data
     except sqlite3.Error as e:
         st.error(f"An error occurred: {e}")
         return []
@@ -40,7 +38,7 @@ st_autorefresh(interval=1000, key="latest_event_efresh")
 latest_event = get_latest_event()
 
 def food_visual():
-    data, _ = fetch_food_data(latest_event)
+    data = fetch_food_data(latest_event)
 
     st.subheader("🍎 Food Emission Data")
     st.write("Event: ", latest_event)
