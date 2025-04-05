@@ -7,6 +7,8 @@ from datetime import datetime
 import base64
 import json
 
+st.set_page_config(layout="wide")
+
 # Configure logging with rotation
 logging.basicConfig(
     level=logging.INFO,

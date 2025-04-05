@@ -1,9 +1,9 @@
-import os
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 import sqlite3
 import logging
+import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
@@ -23,7 +23,7 @@ def get_latest_event():
 def fetch_material_data(category, event):
     """Fetch material emissions data from the database."""
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect("data/emissions.db")
         cursor = conn.cursor()
         cursor.execute("SELECT id, event, Weight, Quantity, Emission, Timestamp FROM Materials WHERE Category = ? AND event=?", (category, event,))
         data = cursor.fetchall()
@@ -72,7 +72,6 @@ def visualize(category, event_name):
     df["Weight"] = df["Weight"].astype(float)
     df["Quantity"] = df["Quantity"].astype(float)
     df["Emission"] = df["Emission"].astype(float)
-
 
     # Scatter Plot: Total Emission by Events
     st.subheader("Total Emission by Events")

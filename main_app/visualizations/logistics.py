@@ -1,3 +1,4 @@
+import logging
 import streamlit as st
 import sqlite3
 import pandas as pd
@@ -9,6 +10,7 @@ from streamlit_extras.dataframe_explorer import dataframe_explorer
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
 def fetch_logistics_data():
     try:

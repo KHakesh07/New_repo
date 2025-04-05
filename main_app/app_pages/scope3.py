@@ -1,16 +1,17 @@
-import os
 import streamlit as st
 from modules.material import show_material_calculator
-from modules.logistics import logist_calculator
 from visualizations.material_visualization import visualize
 from visualizations.transportation_visualization import transport_visual
 from visualizations.food_visualization import food_visual
 from visualizations.logistics import logist_vis
+from modules.logistics import logist_calculator
 import sqlite3
 import pandas as pd
 import plotly.express as px
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 import logging
+import os
+from streamlit_autorefresh import st_autorefresh
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
@@ -34,15 +35,18 @@ def scope3_page():
     if "logged_in_user" not in st.session_state:
         st.error("Please login first!")
         return
+
     # Calculations Section: Tabs for each calculator
     st.subheader("Scope 3 Emission Calculator")
-    ta1 ,ta2 = st.tabs(["Materials Calculator", "Logistics Calculator"])
-    with ta1:
+    calc_tab1, calc_tab2 = st.tabs([
+        "Materials Calculator", "Logistics Calculator"
+    ])
+
+    with calc_tab1:
         show_material_calculator(event)
-    with ta2:
+
+    with calc_tab2:
         logist_calculator()
-
-
     st.title(" ")
     # Emission Analysis Section: Tabs for visualizations
     st.header("Emission Analysis")
@@ -52,7 +56,7 @@ def scope3_page():
 
     with vis_tab1:
         try:
-            transport_visual()
+            transport_visual("TransportEmissions")
         except Exception as e:
             st.error(f"An error occurred while loading transportation visualizations: {e}")
             logging.error(f"Error in transportation visualization: {e}")
@@ -81,7 +85,6 @@ def scope3_page():
                     event_name = get_latest_event()
                     st.rerun
 
-            df = pd.DataFrame(data1, columns=["id", "event", "Category", "Weight", "Quantity", "Emission", "Timestamp"])
             category = st.selectbox("Select a category", ["Trophies", "Banners", "Momentoes", "Kit"], key="Hake")
             visualize(category, event)
         except Exception as e:

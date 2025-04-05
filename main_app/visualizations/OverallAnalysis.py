@@ -9,15 +9,58 @@ import plotly.graph_objects as go
 import logging
 from streamlit_autorefresh import st_autorefresh
 from plotly.subplots import make_subplots
+from visualizations.report import report
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
 
-
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-
+# Custom CSS for better styling
+st.markdown("""
+<style>
+    .main {
+        background-color: #343E49;
+    }
+    .stApp {
+        background-color: #343E49;
+    }
+    .metric-card {
+        background-color: white;
+        color: black;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    .metric-card.primary {
+        background-color: #10485E;
+        color: white;
+    }
+    .metric-card h3 {
+        margin-bottom: 5px;
+        font-size: 1.2rem;
+    }
+    .metric-card h2 {
+        font-size: 1.8rem;
+        margin: 0;
+    }
+    .section-title {
+        font-size: 1.3rem;
+        margin-bottom: 15px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #ddd;
+    }
+    .chart-container {
+        background-color: #3A4655;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 ######################## - GET THE LATEST EVENT DETAILS - #############################
 def get_latest_event():
@@ -32,8 +75,8 @@ st_autorefresh(interval=1000, key="latest_event_refres")
 event_name = get_latest_event()
 
 
-
 ##############################################################################################
+
 def fetch_emissions_data(event_name):
     conn = sqlite3.connect(DB_PATH)
     query = "SELECT * FROM EmissionsSummary WHERE Event = ?"
@@ -58,21 +101,121 @@ def create_metric_card(title, value, color):
     )
 
 
-    
-    # Sea background (using base64 encoded image)
-    sea_background = """
-    <style>
-    .stApp {
-        background-color: #343E49;
-    h1 {
-        color: #FFD700;
-        font-family: 'Anime', sans-serif;
-        text-shadow: 2px 2px 4px #000000;
+
+def get_emission_journey(event_name):
+    conn = sqlite3.connect(DB_PATH)
+
+    scope_map = {
+        "HVACEmissions": "Scope 1",
+        "Scope1": "Scope 1",
+        "ElectricityEmissions": "Scope 2",
+        "transport_data": "Scope 3",
+        "Materials": "Scope 3",
+        "logistics_emissions": "Scope 3",
+        "food_choices": "Scope 3"
     }
-    </style>
+
+    query = f"""
+    SELECT SourceTable, Emission, Timestamp FROM (
+        SELECT 'HVACEmissions' AS SourceTable, Emission, Timestamp FROM HVACEmissions WHERE event = ?
+        UNION ALL
+        SELECT 'Scope1', total_emission AS Emission, Timestamp FROM Scope1 WHERE event = ?
+        UNION ALL
+        SELECT 'ElectricityEmissions', Emission, Timestamp FROM ElectricityEmissions WHERE event = ?
+        UNION ALL
+        SELECT 'transport_data', Emission, NULL AS Timestamp FROM transport_data WHERE event = ?
+        UNION ALL
+        SELECT 'Materials', Emission, Timestamp FROM Materials WHERE event = ?
+        UNION ALL
+        SELECT 'logistics_emissions', total_emission AS Emission, created_at AS Timestamp FROM logistics_emissions WHERE Event = ?
+        UNION ALL
+        SELECT 'food_choices', emission AS Emission, NULL FROM food_choices WHERE event = ?
+    )
     """
-    st.markdown(sea_background, unsafe_allow_html=True)
-    
+    df = pd.read_sql_query(query, conn, params=[event_name]*7)
+    conn.close()
+
+    df["Timestamp"] = pd.to_datetime(df["Timestamp"]).fillna(method="ffill")
+    df["Scope"] = df["SourceTable"].map(scope_map)
+    df = df.sort_values("Timestamp")
+
+    return df
+
+def visual2_what_if_simulation():
+    st.subheader("🔮 What-If Scenario Simulator")
+
+    # Real emission data
+    df = fetch_emissions_data(event_name)
+    actual_total = df["Emission"].sum()
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("**Simulate alternative greener choices and see potential CO₂ savings!**")
+        st.markdown("""
+<style>
+/* General blue color customization */
+input[type=range] {
+    accent-color: #1E90FF;  /* Blue (DodgerBlue) */
+}
+
+/* Webkit browsers (Chrome, Safari) */
+input[type=range]::-webkit-slider-thumb {
+    background: #1E90FF;
+}
+input[type=range]::-webkit-slider-runnable-track {
+    background: #87CEFA;
+}
+
+/* Firefox */
+input[type=range]::-moz-range-thumb {
+    background: #1E90FF;
+}
+input[type=range]::-moz-range-track {
+    background: #87CEFA;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+    # Simulate values
+        logistics_slider = st.slider("🌍 % Reduction in Logistics Emissions", 0, 100, 0)
+        food_slider = st.slider("🥗 % Shift to Sustainable Food Choices", 0, 100, 0)
+        electricity_slider = st.slider("⚡ % Optimization in Electricity Usage", 0, 100, 0)
+
+    # Calculate potential savings
+        logistics = df[df['SourceTable'] == 'logistics_emissions']["Emission"].sum()
+        food = df[df['SourceTable'] == 'food_choices']["Emission"].sum()
+        electricity = df[df['SourceTable'] == 'ElectricityEmissions']["Emission"].sum()
+
+        savings = (
+            logistics * (logistics_slider / 100.0) +
+            food * (food_slider / 100.0) +
+            electricity * (electricity_slider / 100.0)
+        )
+
+        new_total = actual_total - savings
+
+        st.metric(label="🎯 Original Emissions", value=f"{actual_total:.2f} tCO₂e")
+        st.metric(label="🌱 Projected Emissions (If Actions Taken)", value=f"{new_total:.2f} tCO₂e")
+        st.metric(label="💚 Potential CO₂ Saved", value=f"{savings:.2f} tCO₂e")
+    with col2:
+        fig = go.Figure()
+        fig.add_trace(go.Indicator(
+            mode="gauge+number+delta",
+            value=new_total,
+            delta={'reference': actual_total},
+            title={'text': "Projected Emissions"},
+            gauge={'axis': {'range': [0, max(actual_total, new_total) + 10]},
+               'bar': {'color': "green"},
+               'steps': [
+                   {'range': [0, actual_total], 'color': "#87CEEB"},
+                   {'range': [actual_total, max(actual_total, new_total)+10], 'color': "lightgray"}
+               ]}
+        ))
+        fig.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
 
 # Main dashboard function
 def vis():
@@ -85,7 +228,7 @@ def vis():
     st.markdown(f"### Track Your {event_name} Carbon Footprintss")
     
     # Metrics row
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         create_metric_card("Scope 1 - Direct Emissions", 
                          scope_totals.get('Scope 1', 0), 
@@ -98,6 +241,10 @@ def vis():
         create_metric_card("Scope 3 - Indirect", 
                          scope_totals.get('Scope 3', 0), 
                          "#87CEEB")  # Sky blue
+    with col4:
+        create_metric_card("Total Emissions", 
+                         df['Emission'].sum(), 
+                         "#20B2AA")
     
     # Charts section
     st.markdown("---")
@@ -118,7 +265,7 @@ def vis():
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             font_color='white',
-            title_font_color='#FFD700'
+            title_font_color='#E8EBFF'
         )
         st.plotly_chart(fig_pie, use_container_width=True)
     
@@ -138,7 +285,7 @@ def vis():
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             font_color='white',
-            title_font_color='#FFD700',
+            title_font_color='#E8EBFF',
             showlegend=False
         )
         fig_bar.update_traces(
@@ -146,7 +293,38 @@ def vis():
             textposition='auto'          # 🟢 Place text on the bar
         )
         st.plotly_chart(fig_bar, use_container_width=True)
-    
+
+
+    df_journey = get_emission_journey(event_name)
+    df_journey["Cumulative Emission"] = df_journey["Emission"].cumsum()
+
+    fig = px.area(
+        df_journey,
+        x="Timestamp",
+        y="Cumulative Emission",
+        color="Scope",
+        title="📈 Carbon Emission Journey Timeline",
+        markers=True,
+        color_discrete_map={
+            "Scope 1": "#1E90FF",
+            "Scope 2": "#4682B4",
+            "Scope 3": "#87CEEB"
+        }
+    )
+    fig.update_layout(
+        font_color="white",
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        title_font_color="#E8EBFF",
+        xaxis_title="Time of Emission Record",
+        yaxis_title="Cumulative Emissions (kg CO₂)"
+    )
+    st.plotly_chart(fig, use_container_width=True)
+    st.markdown("---")
+    visual2_what_if_simulation()
+    st.markdown("---")
+    report()
+
 
 
 # Run the dashboard

@@ -1,13 +1,12 @@
-import os
 import sqlite3
 import streamlit as st
 from modules.electricity import show_electricity_hvac_calculator
 from visualizations.electricity_visualization import electricity_visual
 import logging
+import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
-
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 

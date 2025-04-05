@@ -1,12 +1,13 @@
-import os
 import sqlite3
 import streamlit as st
 from app_pages.scope1 import scope1_page
 from app_pages.scope2 import scope2_page
 from app_pages.scope3 import scope3_page
+import os
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
+
 def overview_page():
     # Check if user is logged in
     if "logged_in_user" not in st.session_state:

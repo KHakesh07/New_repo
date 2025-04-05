@@ -1,8 +1,8 @@
-import os
 import streamlit as st
 import random
 import re
 import sqlite3
+import os
 
 # -------------------------------
 # 1. Real Data Integration: Load Emission Data from Database
