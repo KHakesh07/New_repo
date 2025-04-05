@@ -13,3 +13,4 @@ python-dotenv
 googlemaps
 streamlit-autorefresh
 seaborn
+qrcode
