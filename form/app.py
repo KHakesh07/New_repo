@@ -23,13 +23,14 @@ def fetch_latest_event():
 Event = fetch_latest_event()
 st.write(f"Event: {Event}")
 
-def store_food_data(Event, session_id, dietary_pattern, food_choices, total_food_emission):
+def store_food_data(Event, session_id, dietary_pattern, food_choices, emission):
     """Store food choices for the user session."""
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         for food_item in food_choices:
+            emission = emission_factors.get(food_item, 0.0)  # Get per-item emission
             c.execute('''INSERT INTO food_choices (Event, session_id, dietary_pattern, food_item , emission) 
-                         VALUES (?, ?, ?, ?, ?)''', (Event, session_id, dietary_pattern, food_item, total_food_emission))
+                 VALUES (?, ?, ?, ?, ?)''', (Event, session_id, dietary_pattern, food_item, emission))
         conn.commit()
 
 
@@ -154,7 +155,7 @@ with st.container():
         if st.button("Save Food Preferences"):
             st.write(f"- {item}: {emission} kgCO₂e")
             if user_choices:
-                store_food_data(Event, st.session_state.session_id, dietary_pattern, user_choices, total_food_emission)
+                store_food_data(Event, st.session_state.session_id, dietary_pattern, user_choices, emission)
 
                 st.success("✅ Food preferences saved!")
             else:
