@@ -12,10 +12,21 @@ DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-def fetch_logistics_data():
+
+def fetch_event_data():
+    c = sqlite3.connect(DB_PATH)
+    cursor = c.cursor()
+    cursor.execute("SELECT name FROM Events ORDER BY id DESC LIMIT 1")
+    cursor.fetchone()
+    c.close()
+    
+st_autorefresh(interval=1000, key="lates_event_refresh")
+event = fetch_event_data()
+
+def fetch_logistics_data(event):
     try:
         conn = sqlite3.connect(DB_PATH)
-        df = pd.read_sql_query("SELECT * FROM logistics_emissions ORDER BY created_at DESC", conn)
+        df = pd.read_sql_query("SELECT * FROM logistics_emissions ORDER BY created_at DESC WHERE event = ?", (event,), conn)
         conn.close()
         return df
     except Exception as e:
@@ -26,19 +37,11 @@ def logist_vis():
     st.title("🚛 Logistics Emissions Dashboard")
     st.markdown("Analyze emissions data stored in the `logistics_emissions` table.")
 
-    df = fetch_logistics_data()
+    df = fetch_logistics_data(event)
 
     if df.empty:
         st.warning("No data available in the logistics_emissions table.")
         return
-
-    # Filter Section
-
-    # Apply Filters
-    if selected_event != "All":
-        df = df[df["Event"] == selected_event]
-    if selected_transport:
-        df = df[df["transport_mode"].isin(selected_transport)]
 
     # Metrics
     st.subheader("📊 Summary Statistics")
