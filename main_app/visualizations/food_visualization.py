@@ -6,17 +6,20 @@ import matplotlib.pyplot as plt
 import plotly.express as px
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 from streamlit_autorefresh import st_autorefresh
+import logging 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-def fetch_food_data():
+
+def fetch_food_data(latest_event):
     try:
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         c = conn.cursor()
-        cursor.execute(f"SELECT dietary_pattern, food_item, emission FROM food_choices")
+        cursor.execute(f"SELECT dietary_pattern, food_item, emission FROM food_choices WHERE event = ?", (latest_event,))
         data = cursor.fetchall()
         event = c.fetchone()
         conn.close()
@@ -31,12 +34,13 @@ def fetch_event_data():
     cursor.execute("SELECT name FROM Events ORDER BY id DESC LIMIT 1")
     cursor.fetchone()
     c.close()
+    
 st_autorefresh(interval=1000, key="lates_event_refresh")
 latest_event = fetch_event_data()
 
 
 def food_visual():
-    data, latest_event = fetch_food_data()
+    data, latest_event = fetch_food_data(latest_event)
 
     st.subheader("🍎 Food Emission Data")
 

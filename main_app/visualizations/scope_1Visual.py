@@ -8,6 +8,8 @@ import logging
 from streamlit_extras.dataframe_explorer import dataframe_explorer
 from streamlit_autorefresh import st_autorefresh
 
+
+############################## EVENT ##################################################
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
 
@@ -26,14 +28,12 @@ def get_latest_event():
 st_autorefresh(interval=1000, key="latest_event_efresh")
 event_name = get_latest_event()
 st.write(f"Event: {event_name}")
-
-
 ######################################################################################
 
 def fetch_data(event):
     """Fetch and process data from the Scope1 table."""
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn = sqlite3.connect("data/emissions.db")
         cursor = conn.cursor()
         cursor.execute("SELECT id, event, fuels, consumptions, emissions, total_emission, Timestamp FROM Scope1 WHERE event = ?", (event,))
         data = cursor.fetchall()
@@ -100,6 +100,7 @@ def display():
         return
 
     df = pd.DataFrame(data, columns=["Id", "Event", "Fuel Type", "Consumption (kWh)", "Emission (kg CO₂)", "Total Emission (kg CO₂)", "Timestamp"])
+
 
     # Toggle visualization
     st.write(" ")

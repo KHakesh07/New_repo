@@ -1,9 +1,9 @@
-import os
 import streamlit as st
 import sqlite3
 import pandas as pd
 import plotly.express as px
 from streamlit_extras.dataframe_explorer import dataframe_explorer
+import os
 from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(
@@ -11,6 +11,8 @@ st.set_page_config(
     page_icon="⚡",
     layout="wide"
 )
+
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
@@ -41,7 +43,6 @@ def fetch_data(event, table_name):
     except sqlite3.Error as e:
         st.error(f"Database error: {e}")
         return pd.DataFrame()
-
 def display_analytics(df, data_type="Emission"):
     """Display descriptive analytics metrics."""
     total = round(df[data_type].sum(), 3)
@@ -110,6 +111,7 @@ def electricity_visual():
         df = fetch_data(event_name, "HVACEmissions")
 
         if not df.empty:
+
             display_analytics(df)
 
             plot_graphs(df, event_name, "Refrigerant", "MassLeak")

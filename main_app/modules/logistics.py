@@ -10,9 +10,6 @@ import os
 import requests
 
 GOOGLE_MAPS_API_KEY = st.secrets["google"]["maps_api_key"]
-
-
-
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
