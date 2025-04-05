@@ -28,7 +28,7 @@ def store_food_data(Event, session_id, dietary_pattern, food_choices):
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         for food_item in food_choices:
-            c.execute('''INSERT INTO food_choices (session_id, dietary_pattern, food_item) 
+            c.execute('''INSERT INTO food_choices (Event, session_id, dietary_pattern, food_item) 
                          VALUES (?, ?, ?, ?)''', (Event, session_id, dietary_pattern, food_item))
         conn.commit()
 
