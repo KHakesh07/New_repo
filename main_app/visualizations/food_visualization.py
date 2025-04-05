@@ -32,7 +32,7 @@ def fetch_event_data():
     cursor.execute("SELECT name FROM Events ORDER BY id DESC LIMIT 1")
     cursor.fetchone()
     c.close()
-st_autorefresh(interval=1000, key="latest_event_refresh")
+st_autorefresh(interval=1000, key="latest_refresh")
 latest_event = fetch_event_data()
 
 
