@@ -23,13 +23,13 @@ def fetch_latest_event():
 Event = fetch_latest_event()
 st.write(f"Event: {Event}")
 
-def store_food_data(Event, session_id, dietary_pattern, food_choices):
+def store_food_data(Event, session_id, dietary_pattern, food_choices, total_food_emission):
     """Store food choices for the user session."""
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         for food_item in food_choices:
-            c.execute('''INSERT INTO food_choices (Event, session_id, dietary_pattern, food_item) 
-                         VALUES (?, ?, ?, ?)''', (Event, session_id, dietary_pattern, food_item))
+            c.execute('''INSERT INTO food_choices (Event, session_id, dietary_pattern, food_item , emission) 
+                         VALUES (?, ?, ?, ?, ?)''', (Event, session_id, dietary_pattern, food_item, total_food_emission))
         conn.commit()
 
 
@@ -90,7 +90,7 @@ with st.container():
     elif option == "Scan QR":
         st.header("📱 Scan this QR Code")
         st.write("Scan this QR code to open the app on your mobile device.")
-        st.image(buf, caption="Scan me!", use_column_width=True)
+        st.image(buf, caption="Scan me!", use_container_width=True)
 
     # Transport Data Collection
     elif option == "Transport":
@@ -130,11 +130,32 @@ with st.container():
         banana_selection = "Single Banana"  # This is a fixed option
         
         # Flatten the selections (remove extra list brackets)
-        user_choices = selected_food_items + breakfast_selection + salad_selection + sweets_selection + [banana_selection]
+        user_choices = list(selected_food_items) + list(breakfast_selection) + list(salad_selection) + list(sweets_selection) + list([banana_selection])
+
+        emission_factors = {
+            "Vegetarian Diet": 0.723, "Non-Vegetarian Diet": 1.30, "Vegan Diet": 0.7,
+            "Milk": 0.729, "Eggs": 0.588, "Idli with Sambar": 0.61, "Poha with Vegetables": 0.71,
+            "Paratha with Curd": 0.49, "Upma": 0.28, "Omelette with Toast": 0.419,
+            "Masala Dosa": 0.58, "Puri Bhaji": 1.2, "Aloo Paratha": 0.40,
+            "Medu Vada": 1.5, "Sabudana Khichdi": 1.0, "Dhokla": 0.8,
+            "Chole Bhature": 1.1, "Besan Cheela": 0.7, "Pongal": 0.6,
+            "Kachumber Salad": 0.4, "Sprouted Moong Salad": 0.3,
+            "Cucumber Raita Salad": 0.2, "Tomato Onion Salad": 0.3,
+            "Carrot and Cabbage Salad": 0.25, "Gulab Jamun": 0.725, "Rasgulla": 0.725,
+            "Kheer": 0.348, "Jalebi": 0.07, "Kaju Katli": 0.065, "Barfi": 0.069,
+            "Halwa (Carrot or Bottle Gourd)": 0.11, "Laddu": 0.040, "Single Banana": 0.1
+        }
+        total_food_emission = 0.0
+        for item in list(user_choices):
+            emission = emission_factors.get(item, 0.0)
+            
+            total_food_emission += emission
         
         if st.button("Save Food Preferences"):
+            st.write(f"- {item}: {emission} kgCO₂e")
             if user_choices:
-                store_food_data(Event, st.session_state.session_id, dietary_pattern, user_choices)
+                store_food_data(Event, st.session_state.session_id, dietary_pattern, user_choices, total_food_emission)
+
                 st.success("✅ Food preferences saved!")
             else:
                 st.warning("⚠️ Please select at least one food item.")
@@ -154,7 +175,7 @@ with st.container():
         if transport_data:
             st.subheader("🚗 Transport Details")
             for entry in transport_data:
-                st.write(f"**Mode:** {entry[0]}, **Distance:** {entry[1]} km")
+                st.write(f"**Mode:** {entry[0]}, **Distance:** {entry[1]} km" )
         else:
             st.write("No transport data available.")
         
@@ -177,6 +198,7 @@ with st.container():
             store_message(Event, name, message)
 
     st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
