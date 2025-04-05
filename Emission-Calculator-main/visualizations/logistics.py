@@ -4,31 +4,41 @@ import sqlite3
 import pandas as pd
 import plotly.express as px
 import os
-from streamlit_extras.dataframe_explorer import dataframe_explorer
 from streamlit_autorefresh import st_autorefresh
-
+import logging
 # Database setup
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-
 def fetch_event_data():
-    c = sqlite3.connect(DB_PATH)
-    cursor = c.cursor()
-    cursor.execute("SELECT name FROM Events ORDER BY id DESC LIMIT 1")
-    cursor.fetchone()
-    c.close()
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM Events ORDER BY id DESC LIMIT 1")
+        result = cursor.fetchone()
+        conn.close()
+
+        # fetchone returns a tuple like ('EventName',), so extract the value
+        return result[0] if result else None
+    except Exception as e:
+        st.error(f"Database Error: {e}")
+        return None
     
 st_autorefresh(interval=1000, key="lates_event_refresh")
 event = fetch_event_data()
 
 def fetch_logistics_data(event):
     try:
-        conn = sqlite3.connect(DB_PATH)
-        df = pd.read_sql_query("SELECT * FROM logistics_emissions WHERE Event = ? ORDER BY created_at DESC", (event,), conn)
-        conn.close()
+        with sqlite3.connect(DB_PATH) as conn:
+            query = """
+                SELECT * 
+                FROM logistics_emissions 
+                WHERE Event = ? 
+                ORDER BY created_at DESC
+            """
+            df = pd.read_sql_query(query, conn, params=(event,))
         return df
     except Exception as e:
         st.error(f"Database Error: {e}")
