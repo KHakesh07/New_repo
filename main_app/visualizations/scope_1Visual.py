@@ -23,7 +23,7 @@ def get_latest_event():
     event = cursor.fetchone()
     return event[0] if event else None
 
-st_autorefresh(interval=1000, key="latest_eventrefresh")
+st_autorefresh(interval=1000, key="latest_event_efresh")
 event_name = get_latest_event()
 st.write(f"Event: {event_name}")
 
@@ -100,11 +100,6 @@ def display():
         return
 
     df = pd.DataFrame(data, columns=["Id", "Event", "Fuel Type", "Consumption (kWh)", "Emission (kg CO₂)", "Total Emission (kg CO₂)", "Timestamp"])
-
-    # Interactive data explorer
-    st.subheader("Data Explorer")
-    dataframe = dataframe_explorer(df)
-    st.dataframe(dataframe, use_container_width=True)
 
     # Toggle visualization
     st.write(" ")

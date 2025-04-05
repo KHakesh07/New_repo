@@ -73,8 +73,6 @@ def visualize(category, event_name):
     df["Quantity"] = df["Quantity"].astype(float)
     df["Emission"] = df["Emission"].astype(float)
 
-    st.subheader("Stored Data")
-    st.dataframe(df, use_container_width=True)
 
     # Scatter Plot: Total Emission by Events
     st.subheader("Total Emission by Events")

@@ -11,6 +11,7 @@ DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 ############################## EVENT ##################################################
 def get_latest_event():
     """Fetch the latest event name from the Events table."""
@@ -39,7 +40,7 @@ def fetch_transport_data(event_name):
         logging.error(f"Error fetching transport data: {e}")
         return []
 
-st_autorefresh(interval=1000, key="latest_event3_refresh1")
+st_autorefresh(interval=1000, key="latest_evnt_refresh")
 event_name = get_latest_event()
 fetch_transport_data(event_name)
 st.write(f"Event: {event_name}")

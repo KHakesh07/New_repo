@@ -25,7 +25,7 @@ def get_latest_event():
     return event[0] if event else None
 
 event_name = get_latest_event()
-st_autorefresh(interval=1000, key="latest_event")
+st_autorefresh(interval=1000, key="lat_event_refresh")
 latest_event = get_latest_event()
 st.write(f"Event: {latest_event}")
 #######################################################################################
@@ -88,7 +88,7 @@ def plot_graphs(df, event_name, category, value_col):
 def electricity_visual():
     """Display electricity and HVAC emissions visualizations."""
     global event_name
-    if st.button("Refresh", key="KO!"):
+    if st.button("Refresh"):
         event_name = get_latest_event()
         st.rerun()
     tab1, tab2 = st.tabs(["⚡ Electricity Emissions", "❄️ HVAC Emissions"])
@@ -98,9 +98,6 @@ def electricity_visual():
         df = fetch_data(event_name, "ElectricityEmissions")
 
         if not df.empty:
-            dataframe = dataframe_explorer(df)
-            st.dataframe(dataframe, use_container_width=True)
-
             display_analytics(df)
 
             plot_graphs(df, event_name, "Usage", "Value")
@@ -113,9 +110,6 @@ def electricity_visual():
         df = fetch_data(event_name, "HVACEmissions")
 
         if not df.empty:
-            dataframe = dataframe_explorer(df)
-            st.dataframe(dataframe, use_container_width=True)
-
             display_analytics(df)
 
             plot_graphs(df, event_name, "Refrigerant", "MassLeak")

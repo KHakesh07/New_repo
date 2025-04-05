@@ -8,6 +8,7 @@ from common import create_database
 import requests
 import random
 import streamlit.components.v1 as components
+st.set_page_config(layout="wide")
 
 # Custom CSS for overall styling and animations
 st.markdown("""

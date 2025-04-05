@@ -8,6 +8,7 @@ import sqlite3
 import plotly.graph_objects as go
 import logging
 from streamlit_autorefresh import st_autorefresh
+from plotly.subplots import make_subplots
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
@@ -15,6 +16,7 @@ DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+
 
 
 ######################## - GET THE LATEST EVENT DETAILS - #############################
@@ -26,269 +28,127 @@ def get_latest_event():
     event = cursor.fetchone()
     return event[0] if event else None
 
+st_autorefresh(interval=1000, key="latest_event_refres")
 event_name = get_latest_event()
 
 
 
 ##############################################################################################
-def fetch_data(event_name):
-    """Fetch emissions data grouped by category."""
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        query = f"SELECT Category, SUM(Emission) AS TotalEmissions, Timestamp FROM MasterEmissions WHERE Event =? GROUP BY Category"
-        df = pd.read_sql_query(query, conn, params=(event_name,))
-        conn.close()
-        return df
-    except sqlite3.Error as e:
-        st.error(f"Database error: {e}")
-        logging.error(f"Error fetching data: {e}")
-        return pd.DataFrame()
+def fetch_emissions_data(event_name):
+    conn = sqlite3.connect(DB_PATH)
+    query = "SELECT * FROM EmissionsSummary WHERE Event = ?"
+    df = pd.read_sql_query(query, conn, params=(event_name,))
+    conn.close()
+    return df
+## Calculate totals by scope
+def calculate_scope_totals(df):
+    scope_totals = df.groupby('Category')['Emission'].sum().to_dict()
+    return scope_totals
 
-def fetch_total_data(event_name):
-    """Fetch all emissions data."""
-    try:
-        conn = sqlite3.connect(DB_PATH)
-        query = f"SELECT * FROM MasterEmissions WHERE Event = ?"
-        df = pd.read_sql_query(query, conn, params=(event_name,))
-        conn.close()
-        return df
-    except sqlite3.Error as e:
-        st.error(f"Database error: {e}")
-        logging.error(f"Error fetching total data: {e}")
-        return pd.DataFrame()
-
-def convert_to_list(value):
-    """Convert string representations of lists into actual lists."""
-    try:
-        if isinstance(value, str) and value.startswith("["):
-            return ast.literal_eval(value)
-        return value
-    except Exception as e:
-        logging.warning(f"Error converting to list: {e}")
-        return value
-
-def process_data(df):
-    """Process and transform the emissions data."""
-    processed_data = []
-    event_cumulative = {}
-
-    # Process only the first 100 rows for testing
-    for _, row in df.head(100).iterrows():
-        _, SourceTable, Category, Event, Description, Quantity, Weight, Emission, Timestamp = row
-        
-        # Convert lists
-        Description = convert_to_list(Description)
-        Quantity = convert_to_list(Quantity)
-        Emission = convert_to_list(Emission)
-
-        # If Description is a list, split into multiple rows
-        if isinstance(Description, list):
-            for desc, qty, emi in zip(Description, Quantity, Emission):
-                processed_data.append([SourceTable, Category, Event, desc, qty, Weight, emi, Timestamp])
-        else:
-            processed_data.append([SourceTable, Category, Event, Description, Quantity, Weight, Emission, Timestamp])
-    
-    # Convert to DataFrame
-    transformed_df = pd.DataFrame(processed_data, columns=["SourceTable", "Category", "Event", "Description", "Quantity", "Weight", "Emission", "Timestamp"])
-
-    # Compute cumulative emissions per event
-    for event in transformed_df["Event"].unique():
-        event_cumulative[event] = transformed_df[transformed_df["Event"] == event]["Emission"].sum()
-
-    # Add cumulative emissions column
-    transformed_df["Cumulative Emission"] = transformed_df["Event"].map(event_cumulative)
-
-    # Assign unique row numbers
-    transformed_df.insert(0, "ID", range(1, len(transformed_df) + 1))
-
-    return transformed_df
-
-def display_emissions_summary(df):
-    """Display emissions summary by scope."""
+# Create metric card
+def create_metric_card(title, value, color):
     st.markdown(
-    """
+        f"""
+        <div style="background-color: {color}; padding: 20px; border-radius: 10px; text-align: center; margin: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <h3 style="color: white; font-family: 'Anime', sans-serif;">{title}</h3>
+            <h2 style="color: white; font-size: 36px;">{value:.2f} tCO2e</h2>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+    
+    # Sea background (using base64 encoded image)
+    sea_background = """
     <style>
-        .main {
-            background-color: #343E49;  /* Light gray background */
-            padding: 20px;
-            border-radius: 10px;
-        }
-        .stApp {
-            background-color: #343E49; /* Light blue background */
-        }
+    .stApp {
+        background-color: #343E49;
+    h1 {
+        color: #FFD700;
+        font-family: 'Anime', sans-serif;
+        text-shadow: 2px 2px 4px #000000;
+    }
     </style>
-    """,
-    unsafe_allow_html=True,
-    )
-    col1, col2, col3 = st.columns(3)
-    with col3:
-        global event_name
-        if st.button("🔄 Refresh Data", key="GO!"):
-            event_name = get_latest_event()
-            st.rerun()
-    with col1:
-        st.title(" ")
-    with col2:
-        st.title(f"Event: {event_name}")
+    """
+    st.markdown(sea_background, unsafe_allow_html=True)
+    
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        Scope1_Emission = df[df['Category'] == 'Scope1']['TotalEmissions'].sum()
-        Scope2_Emission = df[df['Category'] == 'Scope2']['TotalEmissions'].sum()
-        Scope3_Emission = df[df['Category'] == 'Scope3']['TotalEmissions'].sum()
-
-        st.write("Emissions by Category")
-        st.markdown(f"""
-            <div style="padding:1px; border-radius:7px; background-color:white; color:black; text-align:center; 
-            max-width: 350px; margin-bottom: 10px  ">
-                <h4>Scope 1 Emissions</h4>
-                <h2>{Scope1_Emission:.2f} kg CO₂</h2>
-            </div>
-        """, unsafe_allow_html=True)
-        st.markdown(f"""
-            <div style="padding:1px; border-radius:7px; background-color:#10485E; color:white; text-align:center; 
-            max-width: 350px; margin-bottom: 10px ">
-                <h4>Scope 2 Emissions</h4>
-                <h2>{Scope2_Emission:.2f} kg CO₂</h2>
-            </div>
-        """, unsafe_allow_html=True)
-        st.markdown(f"""
-            <div style="padding:1px; border-radius:7px; background-color:white; color:black; text-align:center; 
-            max-width: 350px;">
-                <h4>Scope 3 Emissions</h4>
-                <h2>{Scope3_Emission:.2f} kg CO₂</h2>
-            </div>
-        """, unsafe_allow_html=True)
-
-    with col2:
-        st.subheader("Emissions Breakdown by Scope")
-        if not df.empty:
-            custom_colors = {
-                "Scope1": "#63788E",
-                "Scope2": "#00356D", 
-                "Scope3": "#10485E"
-            }
-            fig = px.pie(
-                df, 
-                values='TotalEmissions', 
-                names='Category', 
-                title='Scope 1, 2, and 3 Emissions Distribution',
-                color='Category',  # Assign colors by category
-                color_discrete_map=custom_colors  # Map categories to colors
-            )
-            fig.update_layout(
-                paper_bgcolor="#343E49",
-            )
-            st.plotly_chart(fig, use_container_width=True, key="emissions_pie_chart")
-        else:
-            st.warning("No records found.")
-
-    with col3:
-        st.write("Highest Emissions recorded on")
-        day_Scope1_Emission = df[df['Category'] == 'Scope1']['Timestamp'].max()
-        day_Scope2_Emission = df[df['Category'] == 'Scope2']['Timestamp'].max()
-        day_Scope3_Emission = df[df['Category'] == 'Scope3']['Timestamp'].max()
-
-        st.markdown(f"""
-            <div style="padding:1px; border-radius:7px; background-color:white; color:black; text-align:center; 
-            max-width: 350px; margin-bottom: 10px  ">
-                <h4>Scope 1 Emissions</h4>
-                <h2>{day_Scope1_Emission}</h2>
-            </div>
-        """, unsafe_allow_html=True)
-        st.markdown(f"""
-            <div style="padding:1px; border-radius:7px; background-color:#10485E; color:white; text-align:center; 
-            max-width: 350px; margin-bottom: 10px ">
-                <h4>Scope 2 Emissions</h4>
-                <h2>{day_Scope2_Emission}</h2>
-            </div>
-        """, unsafe_allow_html=True)
-        st.markdown(f"""
-            <div style="padding:1px; border-radius:7px; background-color:white; color:black; text-align:center; 
-            max-width: 350px;">
-                <h4>Scope 3 Emissions</h4>
-                <h2>{day_Scope3_Emission}</h2>
-            </div>
-        """, unsafe_allow_html=True)
-
-def display_gauge_chart(transformed_df):
-    """Display a gauge chart for cumulative emissions."""
-    latest_emission = transformed_df["Cumulative Emission"].iloc[-1]  # Get latest emission value
-
-    st.write("Total Emission")
-    fig = go.Figure(go.Indicator(
-        mode="gauge+number", 
-        value=latest_emission, 
-        title={'text': "Emission Levels"}, 
-        gauge={
-            'axis': {'range': [0, transformed_df["Cumulative Emission"].max()]}, 
-            'bar': {'color': "#10485E"},
-            'steps': [
-                {'range': [0, 50], 'color': "green"},
-                {'range': [50, 100], 'color': "yellow"},
-                {'range': [100, transformed_df["Cumulative Emission"].max()], 'color': "#E8E8E8"}
-            ],
-            'threshold': {
-                'line': {'color': "black", 'width': 4},
-                'thickness': 0.75,
-                'value': latest_emission
-            }
-            
-        }
-    ))
-    fig.update_layout(
-        paper_bgcolor="#343E49",
-    )
-
-    st.plotly_chart(fig, use_container_width=True, key="gauge_chart")
-
-####################### TOP 5 EMissions ################################
-def get_top_5_descriptions(transformed_df):
-    """Retrieve the top 5 descriptions based on total emissions."""
-    top_descriptions = (
-        transformed_df.groupby("Description")["Emission"]
-        .sum()
-        .reset_index()
-        .sort_values(by="Emission", ascending=False)
-        .head(5)
-    )
-    return top_descriptions
-
-
+# Main dashboard function
 def vis():
-    """Main function to display the overall analysis."""
-    with st.spinner("Loading data..."):
-        df = fetch_data(event_name)
-        transformed = process_data(fetch_total_data(event_name))
-
-    # Display emissions summary
-    display_emissions_summary(df)
-
-    # Transformed data visualizations
-    c, co = st.columns(2)
-    with c:
-        top_5_descriptions = get_top_5_descriptions(transformed)
-        fig1 = px.bar(top_5_descriptions, x="Emission", y="Description", title="Top 5 Emissions And Contributing Category")
-        fig1.update_traces(marker_color="#ffffff")
-        fig1.update_layout(paper_bgcolor="#343E49",plot_bgcolor="#343E49",)
-        st.plotly_chart(fig1, use_container_width=True, key="f1")
-    with co:
-        display_gauge_chart(transformed)
-
-    # Emissions trend over time
+    # Fetch and prepare data
+    df = fetch_emissions_data(event_name)
+    scope_totals = calculate_scope_totals(df)
+    
+    # Header
+    st.title("Emissions Dashboard")
+    st.markdown(f"### Track Your {event_name} Carbon Footprintss")
+    
+    # Metrics row
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        create_metric_card("Scope 1 - Direct Emissions", 
+                         scope_totals.get('Scope 1', 0), 
+                         "#1E90FF")  # Deep blue like the sea
+    with col2:
+        create_metric_card("Scope 2 - Electricity", 
+                         scope_totals.get('Scope 2', 0), 
+                         "#4682B4")  # Steel blue
+    with col3:
+        create_metric_card("Scope 3 - Indirect", 
+                         scope_totals.get('Scope 3', 0), 
+                         "#87CEEB")  # Sky blue
+    
+    # Charts section
+    st.markdown("---")
+    st.markdown("### Emissions Analysis - Activities")
+    
     col4, col5 = st.columns(2)
+    
     with col4:
-        st.write("Emission breakdown")
-        category = st.selectbox("Select", ["SourceTable", "Category", "Event", "Description", "Cumulative Emission", "Timestamp"])
-        fig1 = px.bar(transformed, x="Cumulative Emission", y=category, title="Emission Trend", color_discrete_sequence=["white", "blue", "green", "purple"])
-        fig1.update_layout(paper_bgcolor="#343E49",plot_bgcolor="#343E49",)
-        st.plotly_chart(fig1, use_container_width=True, key="f2")
+        # Pie chart for emission distribution
+        fig_pie = px.pie(
+            df.groupby('Category')['Emission'].sum().reset_index(),
+            values='Emission',
+            names='Category',
+            title=f"Emissions Distribution by Category in Event {event_name}",
+            color_discrete_sequence=['#1E90FF', '#4682B4', '#87CEEB']
+        )
+        fig_pie.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font_color='white',
+            title_font_color='#FFD700'
+        )
+        st.plotly_chart(fig_pie, use_container_width=True)
+    
     with col5:
-        st.subheader("📈 Emissions Over Time")
-        fig2 = px.line(transformed, x="Timestamp", y="Cumulative Emission", title="Emission Trend", color_discrete_sequence=["#327287", "blue", "green", "purple"], markers=True)
-        fig2.update_layout(hovermode="x unified", xaxis_title="Timestamp", yaxis_title="Cumulative Emission", legend_title="Legend", hoverlabel=dict(bgcolor="black", font_size=12, font_family="Arial"), paper_bgcolor="#343E49",plot_bgcolor="#343E49",)
-        st.plotly_chart(fig2, use_container_width=True, key="f3")
+        # Bar chart for sources
+        top_sources = (df.groupby('SourceTable')['Emission'].sum().reset_index().sort_values(by='Emission', ascending=False).head(5))
+        fig_bar = px.bar(
+            top_sources.groupby(['SourceTable'])['Emission'].sum().reset_index(),
+            x='Emission',
+            y='SourceTable',
+            title=f"Top Highest Emissions Recorded In this Event {event_name}", 
+            color='SourceTable',
+            text='Emission',
+            color_discrete_sequence=['#20B2AA', '#4169E1', '#00CED1', '#1E90FF', '#87CEFA', '#4682B4']
+        )
+        fig_bar.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font_color='white',
+            title_font_color='#FFD700',
+            showlegend=False
+        )
+        fig_bar.update_traces(
+            texttemplate='%{text:.2s}',  # Show short form (e.g., 2.1k)
+            textposition='auto'          # 🟢 Place text on the bar
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
+    
 
-# Run the app
+
+# Run the dashboard
 if __name__ == "__main__":
     vis()

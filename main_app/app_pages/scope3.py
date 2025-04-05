@@ -1,8 +1,7 @@
 import os
 import streamlit as st
 from modules.material import show_material_calculator
-from modules.transport import show_transport_calculator
-from modules.food import show_food_calculator
+from modules.logistics import logist_calculator
 from visualizations.material_visualization import visualize
 from visualizations.transportation_visualization import transport_visual
 from visualizations.food_visualization import food_visual
@@ -35,21 +34,15 @@ def scope3_page():
     if "logged_in_user" not in st.session_state:
         st.error("Please login first!")
         return
-
     # Calculations Section: Tabs for each calculator
     st.subheader("Scope 3 Emission Calculator")
-    calc_tab1, calc_tab2, calc_tab3 = st.tabs([
-        "Material Calculator", "Transport Calculator", "Food Calculator"
-    ])
-
-    with calc_tab1:
+    ta1 ,ta2 = st.tabs(["Materials Calculator", "Logistics Calculator"])
+    with ta1:
         show_material_calculator(event)
+    with ta2:
+        logist_calculator()
 
-    with calc_tab2:
-        show_transport_calculator(event)
 
-    with calc_tab3:
-        show_food_calculator(event)
     st.title(" ")
     # Emission Analysis Section: Tabs for visualizations
     st.header("Emission Analysis")
@@ -59,7 +52,7 @@ def scope3_page():
 
     with vis_tab1:
         try:
-            transport_visual("TransportEmissions")
+            transport_visual()
         except Exception as e:
             st.error(f"An error occurred while loading transportation visualizations: {e}")
             logging.error(f"Error in transportation visualization: {e}")
@@ -89,12 +82,6 @@ def scope3_page():
                     st.rerun
 
             df = pd.DataFrame(data1, columns=["id", "event", "Category", "Weight", "Quantity", "Emission", "Timestamp"])
-            dataframe = dataframe_explorer(df)
-            st.dataframe(dataframe, use_container_width=True)
-
-            fig = px.pie(df, names='event', values="Emission", color="Weight", title="Emissions Breakdown", hole=0.3)
-            st.plotly_chart(fig, use_container_width=True)
-
             category = st.selectbox("Select a category", ["Trophies", "Banners", "Momentoes", "Kit"], key="Hake")
             visualize(category, event)
         except Exception as e:
