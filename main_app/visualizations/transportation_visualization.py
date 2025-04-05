@@ -4,6 +4,7 @@ import sqlite3
 import pandas as pd
 import plotly.express as px
 import logging
+from streamlit_autorefresh import st_autorefresh
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(BASE_DIR,"..", "..", "data", "emissions.db")
