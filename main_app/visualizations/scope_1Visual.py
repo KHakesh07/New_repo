@@ -23,7 +23,7 @@ def get_latest_event():
     event = cursor.fetchone()
     return event[0] if event else None
 
-st_autorefresh(interval=1000, key="latest_event_refresh")
+st_autorefresh(interval=1000, key="latest_eventrefresh")
 event_name = get_latest_event()
 st.write(f"Event: {event_name}")
 
