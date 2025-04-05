@@ -56,7 +56,7 @@ def scope3_page():
 
     with vis_tab1:
         try:
-            transport_visual("TransportEmissions")
+            transport_visual()
         except Exception as e:
             st.error(f"An error occurred while loading transportation visualizations: {e}")
             logging.error(f"Error in transportation visualization: {e}")
