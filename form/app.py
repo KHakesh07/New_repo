@@ -134,7 +134,7 @@ with st.container():
         
         if st.button("Save Food Preferences"):
             if user_choices:
-                store_food_data(st.session_state.session_id, dietary_pattern, user_choices)
+                store_food_data(Event, st.session_state.session_id, dietary_pattern, user_choices)
                 st.success("✅ Food preferences saved!")
             else:
                 st.warning("⚠️ Please select at least one food item.")
