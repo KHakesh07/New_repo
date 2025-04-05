@@ -38,7 +38,7 @@ def fetch_transport_data(event_name):
         logging.error(f"Error fetching transport data: {e}")
         return []
 
-st_autorefresh(interval=1000, key="latest_event_refresh1")
+st_autorefresh(interval=1000, key="latest_event3_refresh1")
 event_name = get_latest_event()
 fetch_transport_data(event_name)
 st.write(f"Event: {event_name}")
