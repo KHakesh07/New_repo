@@ -27,7 +27,7 @@ event = fetch_event_data()
 def fetch_logistics_data(event):
     try:
         conn = sqlite3.connect(DB_PATH)
-        df = pd.read_sql_query("SELECT * FROM logistics_emissions ORDER BY created_at DESC WHERE event = ?", (event,), conn)
+        df = pd.read_sql_query("SELECT * FROM logistics_emissions WHERE Event = ? ORDER BY created_at DESC", (event,), conn)
         conn.close()
         return df
     except Exception as e:
