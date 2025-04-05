@@ -10,4 +10,3 @@ numpy
 scipy
 loguru
 python-dotenv
-streamlit-autorefresh
