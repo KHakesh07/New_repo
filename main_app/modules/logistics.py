@@ -10,7 +10,7 @@ import os
 import requests
 
 GOOGLE_MAPS_API_KEY = st.secrets["google"]["maps_api_key"]
-gmaps = googlemaps.Client(key=GOOGLE_MAPS_API_KEY)
+
 
 
 # Configure logging
