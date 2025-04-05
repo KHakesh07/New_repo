@@ -28,7 +28,7 @@ def store_food_data(Event, session_id, dietary_pattern, food_choices):
     with sqlite3.connect(DB_PATH) as conn:
         c = conn.cursor()
         for food_item in food_choices:
-            c.execute('''INSERT INTO food_choices (session_id, dietary_pattern, food_item) 
+            c.execute('''INSERT INTO food_choices (Event, session_id, dietary_pattern, food_item) 
                          VALUES (?, ?, ?, ?)''', (Event, session_id, dietary_pattern, food_item))
         conn.commit()
 
@@ -134,7 +134,7 @@ with st.container():
         
         if st.button("Save Food Preferences"):
             if user_choices:
-                store_food_data(st.session_state.session_id, dietary_pattern, user_choices)
+                store_food_data(Event, st.session_state.session_id, dietary_pattern, user_choices)
                 st.success("✅ Food preferences saved!")
             else:
                 st.warning("⚠️ Please select at least one food item.")
