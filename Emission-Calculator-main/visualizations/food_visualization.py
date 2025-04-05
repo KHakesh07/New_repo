@@ -28,16 +28,16 @@ def fetch_food_data(latest_event):
         st.error(f"An error occurred: {e}")
         return []
 
-def fetch_event_data():
-    c = sqlite3.connect(DB_PATH)
-    cursor = c.cursor()
+def get_latest_event():
+    """Fetch the latest event name from the Events table."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
     cursor.execute("SELECT name FROM Events ORDER BY id DESC LIMIT 1")
-    cursor.fetchone()
-    c.close()
-    
-st_autorefresh(interval=1000, key="lates_event_refresh")
-latest_event = fetch_event_data()
+    event = cursor.fetchone()
+    return event[0] if event else None
 
+st_autorefresh(interval=1000, key="latest_event_efresh")
+latest_event = get_latest_event()
 
 def food_visual():
     data = fetch_food_data(latest_event)
