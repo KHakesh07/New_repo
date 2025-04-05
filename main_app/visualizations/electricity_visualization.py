@@ -25,7 +25,7 @@ def get_latest_event():
     return event[0] if event else None
 
 event_name = get_latest_event()
-st_autorefresh(interval=1000, key="latest_event_refresh")
+st_autorefresh(interval=1000, key="latest_event")
 latest_event = get_latest_event()
 st.write(f"Event: {latest_event}")
 #######################################################################################
