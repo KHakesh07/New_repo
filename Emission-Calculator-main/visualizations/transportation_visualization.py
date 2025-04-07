@@ -40,10 +40,8 @@ def fetch_transport_data(event_name):
         logging.error(f"Error fetching transport data: {e}")
         return []
 
-st_autorefresh(interval=1000, key="latest_evnt_refresh")
-event_name = get_latest_event()
+
 fetch_transport_data(event_name)
-st.write(f"Event: {event_name}")
 
 def display_descriptive_analytics(df):
     """Display descriptive analytics for transport emissions."""
@@ -74,6 +72,9 @@ def display_descriptive_analytics(df):
 def transport_visual():
     """Display transport emissions visualizations."""
     st.subheader("🚗 Transport Emission Data")
+    if st.button("Refresh"):
+        event_name = get_latest_event()
+        st.rerun()
     st.write("Event: ", event_name)
 
     # Fetch data (cached)
