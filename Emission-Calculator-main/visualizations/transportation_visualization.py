@@ -41,7 +41,7 @@ def fetch_transport_data(event_name):
         return []
 
 
-fetch_transport_data(event_name)
+
 
 def display_descriptive_analytics(df):
     """Display descriptive analytics for transport emissions."""
