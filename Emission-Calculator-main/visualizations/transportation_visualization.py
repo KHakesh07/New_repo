@@ -72,6 +72,7 @@ def display_descriptive_analytics(df):
 def transport_visual():
     """Display transport emissions visualizations."""
     st.subheader("🚗 Transport Emission Data")
+    global event_name
     if st.button("Refresh"):
         event_name = get_latest_event()
         st.rerun()
