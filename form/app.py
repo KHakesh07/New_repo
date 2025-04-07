@@ -20,6 +20,7 @@ def fetch_latest_event():
     conn.close()
     return event[0] if event else "No events found"
 
+st_autorefresh(interval=1000, key="lat_event_refresh")
 Event = fetch_latest_event()
 st.write(f"Event: {Event}")
 
